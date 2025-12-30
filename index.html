@@ -331,7 +331,8 @@
   </div>
 
   <script>
-    const WEBHOOK_URL = "https://amjadfahad.app.n8n.cloud/webhook/prompt-governance";
+    // ✅ Your real production webhook
+    const WEBHOOK_URL = "https://nhci.app.n8n.cloud/webhook/prompt-governance";
 
     function setStatus(text, type){
       const pill = document.getElementById("statusPill");
@@ -341,9 +342,9 @@
 
     function setScore(score){
       const s = Number(score ?? 0);
-      document.getElementById("scorePill").textContent = `Score: ${s}`;
-      document.getElementById("scoreText").textContent = `${s}/100`;
-      document.getElementById("scoreBar").style.width = `${Math.max(0, Math.min(100, s))}%`;
+      document.getElementById("scorePill").textContent = `Score: ${s || 0}`;
+      document.getElementById("scoreText").textContent = `${s || 0}/100`;
+      document.getElementById("scoreBar").style.width = `${Math.max(0, Math.min(100, s || 0))}%`;
     }
 
     function renderMissing(list){
@@ -395,18 +396,25 @@
         resultBox.style.display = "block";
         setScore(data.score);
 
-        if(data.status === "متوافق" || data.status === "Compliant"){
+        if(data.status === "compliant"){
           setStatus("Compliant", "ok");
           messageEl.innerHTML = "✅ The prompt is compliant and ready for use.";
-        }else{
+          outArea.style.display = "none";
+          renderMissing([]);
+        } else if (data.status === "non_compliant"){
           setStatus("Non-compliant", "no");
           messageEl.innerHTML = "❌ The prompt is non-compliant. A refined version has been generated.";
           renderMissing(data.missing_principles);
           refinedEl.value = data.refined_prompt || "";
           outArea.style.display = "block";
+        } else {
+          setStatus("Error", "no");
+          messageEl.innerHTML = "⚠️ Unexpected response from the API.";
+          outArea.style.display = "none";
+          renderMissing([]);
         }
       }catch(e){
-        setStatus("Connection error", "no");
+        setStatus("Connection error (CORS or network)", "no");
         setScore(0);
       }
 
